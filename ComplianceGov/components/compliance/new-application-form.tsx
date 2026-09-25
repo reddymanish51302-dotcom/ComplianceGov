@@ -64,7 +64,7 @@ export function NewApplicationForm() {
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
       if (!supabaseUrl || !supabaseKey) {
-        alert("CRITICAL ERROR: Supabase URL or Anon Key is missing in Vercel Environment Variables!")
+        alert("CRITICAL ERROR: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is missing in Vercel Environment Variables!")
         setLoading(false)
         return
       }
@@ -75,13 +75,13 @@ export function NewApplicationForm() {
           "Content-Type": "application/json",
           "apikey": supabaseKey,
           "Authorization": `Bearer ${supabaseKey}`,
-          "Prefer": "return=minimal"
+          "Prefer": "return=minimal",
         },
         body: JSON.stringify({
           company_name: companyName,
           industry_type: industry,
-          investment_size: investmentSize
-        })
+          investment_size: investmentSize,
+        }),
       })
 
       if (!response.ok) {
@@ -148,7 +148,7 @@ export function NewApplicationForm() {
 
               <Field>
                 <FieldLabel htmlFor="industry-type">Industry Type</FieldLabel>
-                <Select value={industry} onValueChange={setIndustry} items={INDUSTRY_OPTIONS}>
+                <Select value={industry} onValueChange={setIndustry}>
                   <SelectTrigger id="industry-type" className="w-full">
                     <SelectValue placeholder="Select an industry" />
                   </SelectTrigger>
@@ -169,11 +169,7 @@ export function NewApplicationForm() {
 
               <Field>
                 <FieldLabel htmlFor="investment-size">Investment Size</FieldLabel>
-                <Select
-                  value={investmentSize}
-                  onValueChange={setInvestmentSize}
-                  items={INVESTMENT_SIZE_OPTIONS}
-                >
+                <Select value={investmentSize} onValueChange={setInvestmentSize}>
                   <SelectTrigger id="investment-size" className="w-full">
                     <SelectValue placeholder="Select an investment range" />
                   </SelectTrigger>
@@ -209,12 +205,16 @@ export function NewApplicationForm() {
               </span>
             )}
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => {
-                setCompanyName("")
-                setIndustry("")
-                setInvestmentSize("")
-                setSubmitted(false)
-              }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCompanyName("")
+                  setIndustry("")
+                  setInvestmentSize("")
+                  setSubmitted(false)
+                }}
+              >
                 Reset
               </Button>
               <Button type="submit" disabled={!isValid || loading}>
