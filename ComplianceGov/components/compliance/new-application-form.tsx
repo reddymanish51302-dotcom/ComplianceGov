@@ -83,8 +83,7 @@ export function NewApplicationForm() {
         const errorText = await response.text()
         alert("Database Error: " + errorText)
       } else {
-        alert("Success! Application saved to Supabase.")
-        setSubmitted(true)
+      setSubmitted(true)
       }
     } catch (error) {
       alert("Network Error: " + String(error))
