@@ -2,13 +2,6 @@
 
 import { useState } from "react"
 import { Building2, CheckCircle2 } from "lucide-react"
-import { createClient } from "@supabase/supabase-js"
-
-// Initialize Supabase Client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 import { Button } from "@/components/ui/button"
 import {
@@ -45,7 +38,7 @@ const INDUSTRY_OPTIONS = [
 
 const INVESTMENT_SIZE_OPTIONS = [
   { value: "under-1m", label: "Under $1M" },
-  { value: "1m-5m", label: "$1M – $5M" },
+  { value: "1m-5m", label "$1M – $5M" },
   { value: "5m-25m", label: "$5M – $25M" },
   { value: "25m-100m", label: "$25M – $100M" },
   { value: "over-100m", label: "Over $100M" },
@@ -66,25 +59,44 @@ export function NewApplicationForm() {
 
     setLoading(true)
 
-    // Send data to Supabase
-    const { error } = await supabase
-      .from("application")
-      .insert([
-        {
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+      // 1. Check if Vercel actually has your environment variables loaded
+      if (!supabaseUrl || !supabaseKey) {
+        alert("CRITICAL ERROR: Supabase URL or Anon Key is missing in Vercel Environment Variables!")
+        setLoading(false)
+        return
+      }
+
+      // 2. Native Fetch API (Bypasses all package dependencies & Vercel build crashes)
+      const response = await fetch(`${supabaseUrl}/rest/v1/application`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
           company_name: companyName,
           industry_type: industry,
-          investment_size: investmentSize,
-          status: "PENDING",
-        },
-      ])
+          investment_size: investmentSize
+        })
+      })
 
-    setLoading(false)
-
-    if (error) {
-      alert("Error submitting application: " + error.message)
-      console.error(error)
-    } else {
-      setSubmitted(true)
+      // 3. Handle result
+      if (!response.ok) {
+        const errorText = await response.text()
+        alert("Database Error: " + errorText)
+      } else {
+        setSubmitted(true)
+      }
+    } catch (error: any) {
+      alert("Network Error: " + error.message)
+    } finally {
+      setLoading(false)
     }
   }
 
