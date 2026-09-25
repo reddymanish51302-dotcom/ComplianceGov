@@ -44,6 +44,10 @@ const INVESTMENT_SIZE_OPTIONS = [
   { value: "over-100m", label: "Over $100M" },
 ]
 
+// HARDCODED SUPABASE CREDENTIALS (REPLACE WITH YOUR ACTUAL SUPABASE KEYS)
+const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL_HERE"
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE"
+
 export function NewApplicationForm() {
   const [companyName, setCompanyName] = useState("")
   const [industry, setIndustry] = useState("")
@@ -57,29 +61,15 @@ export function NewApplicationForm() {
     event.preventDefault()
     if (!isValid) return
 
-    // TEST ALERT: Proves if new code is running in the browser
-    alert("TEST 1: Form submission function triggered.")
-
     setLoading(true)
 
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-      if (!supabaseUrl || !supabaseKey) {
-        alert("TEST ERROR: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is missing in Vercel Environment Variables!")
-        setLoading(false)
-        return
-      }
-
-      alert("TEST 2: Keys detected. Sending request to Supabase...")
-
-      const response = await fetch(`${supabaseUrl}/rest/v1/application`, {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/application`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`,
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
           "Prefer": "return=minimal",
         },
         body: JSON.stringify({
@@ -91,13 +81,13 @@ export function NewApplicationForm() {
 
       if (!response.ok) {
         const errorText = await response.text()
-        alert("DATABASE RESPONSE ERROR: " + errorText)
+        alert("Database Error: " + errorText)
       } else {
-        alert("TEST 3: Successfully written to Supabase!")
+        alert("Success! Application saved to Supabase.")
         setSubmitted(true)
       }
     } catch (error) {
-      alert("NETWORK CATCH ERROR: " + String(error))
+      alert("Network Error: " + String(error))
     } finally {
       setLoading(false)
     }
