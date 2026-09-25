@@ -57,6 +57,9 @@ export function NewApplicationForm() {
     event.preventDefault()
     if (!isValid) return
 
+    // TEST ALERT: Proves if new code is running in the browser
+    alert("TEST 1: Form submission function triggered.")
+
     setLoading(true)
 
     try {
@@ -64,10 +67,12 @@ export function NewApplicationForm() {
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
       if (!supabaseUrl || !supabaseKey) {
-        alert("CRITICAL ERROR: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is missing in Vercel Environment Variables!")
+        alert("TEST ERROR: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is missing in Vercel Environment Variables!")
         setLoading(false)
         return
       }
+
+      alert("TEST 2: Keys detected. Sending request to Supabase...")
 
       const response = await fetch(`${supabaseUrl}/rest/v1/application`, {
         method: "POST",
@@ -86,12 +91,13 @@ export function NewApplicationForm() {
 
       if (!response.ok) {
         const errorText = await response.text()
-        alert("Database Error: " + errorText)
+        alert("DATABASE RESPONSE ERROR: " + errorText)
       } else {
+        alert("TEST 3: Successfully written to Supabase!")
         setSubmitted(true)
       }
     } catch (error) {
-      alert("Network Error: " + String(error))
+      alert("NETWORK CATCH ERROR: " + String(error))
     } finally {
       setLoading(false)
     }
