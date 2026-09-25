@@ -45,8 +45,8 @@ const INVESTMENT_SIZE_OPTIONS = [
 ]
 
 // HARDCODED SUPABASE CREDENTIALS (REPLACE WITH YOUR ACTUAL SUPABASE KEYS)
-const SUPABASE_URL = https://leolsqraajajphguipzx.supabase.co
-const SUPABASE_ANON_KEY = sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J
+const SUPABASE_URL = "https://leolsqraajajphguipzx.supabase.co"
+const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
 
 export function NewApplicationForm() {
   const [companyName, setCompanyName] = useState("")
