@@ -2,6 +2,13 @@
 
 import { useState } from "react"
 import { Building2, CheckCircle2 } from "lucide-react"
+import { createClient } from "@supabase/supabase-js"
+
+// Initialize Supabase Client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 import { Button } from "@/components/ui/button"
 import {
@@ -49,13 +56,36 @@ export function NewApplicationForm() {
   const [industry, setIndustry] = useState("")
   const [investmentSize, setInvestmentSize] = useState("")
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const isValid = companyName.trim().length > 0 && industry !== "" && investmentSize !== ""
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!isValid) return
-    setSubmitted(true)
+
+    setLoading(true)
+
+    // Send data to Supabase
+    const { error } = await supabase
+      .from("application")
+      .insert([
+        {
+          company_name: companyName,
+          industry_type: industry,
+          investment_size: investmentSize,
+          status: "PENDING",
+        },
+      ])
+
+    setLoading(false)
+
+    if (error) {
+      alert("Error submitting application: " + error.message)
+      console.error(error)
+    } else {
+      setSubmitted(true)
+    }
   }
 
   return (
@@ -178,8 +208,8 @@ export function NewApplicationForm() {
               }}>
                 Reset
               </Button>
-              <Button type="submit" disabled={!isValid}>
-                Submit Application
+              <Button type="submit" disabled={!isValid || loading}>
+                {loading ? "Submitting..." : "Submit Application"}
               </Button>
             </div>
           </CardFooter>
