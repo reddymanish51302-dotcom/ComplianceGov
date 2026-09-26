@@ -1,224 +1,191 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, CheckCircle2 } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckCircle2, UploadCloud } from "lucide-react"
 
-const INDUSTRY_OPTIONS = [
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "technology", label: "Technology & Software" },
-  { value: "energy", label: "Energy & Utilities" },
-  { value: "healthcare", label: "Healthcare & Life Sciences" },
-  { value: "agriculture", label: "Agriculture" },
-  { value: "financial-services", label: "Financial Services" },
-  { value: "logistics", label: "Logistics & Transportation" },
-  { value: "construction", label: "Construction & Infrastructure" },
-]
-
-const INVESTMENT_SIZE_OPTIONS = [
-  { value: "under-1m", label: "Under $1M" },
-  { value: "1m-5m", label: "$1M – $5M" },
-  { value: "5m-25m", label: "$5M – $25M" },
-  { value: "25m-100m", label: "$25M – $100M" },
-  { value: "over-100m", label: "Over $100M" },
-]
-
-// HARDCODED SUPABASE CREDENTIALS (REPLACE WITH YOUR ACTUAL SUPABASE KEYS)
+// HARDCODED SUPABASE CREDENTIALS
 const SUPABASE_URL = "https://leolsqraajajphguipzx.supabase.co"
 const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
 
 export function NewApplicationForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  
+  // Form State
   const [companyName, setCompanyName] = useState("")
   const [industry, setIndustry] = useState("")
-  const [investmentSize, setInvestmentSize] = useState("")
-  const [submitted, setSubmitted] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [investment, setInvestment] = useState("")
+  const [file, setFile] = useState<File | null>(null)
 
-  const isValid = companyName.trim().length > 0 && industry !== "" && investmentSize !== ""
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!isValid) return
-
-    setLoading(true)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
 
     try {
+      let documentUrl = null
+
+      // 1. UPLOAD FILE TO STORAGE (If a file was selected)
+      if (file) {
+        // Create a unique file name so uploads don't overwrite each other
+        const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`
+        
+        const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${fileName}`, {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": file.type,
+          },
+          body: file,
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload document")
+        }
+
+        // Generate the public URL for the uploaded file
+        documentUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${fileName}`
+      }
+
+      // 2. SAVE DATA TO DATABASE
       const response = await fetch(`${SUPABASE_URL}/rest/v1/application`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          "Prefer": "return=minimal",
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          Prefer: "return=minimal"
         },
         body: JSON.stringify({
           company_name: companyName,
           industry_type: industry,
-          investment_size: investmentSize,
+          investment_size: investment,
+          document_url: documentUrl, // Save the real file link!
+          status: "Pending"
         }),
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        alert("Database Error: " + errorText)
-      } else {
-      setSubmitted(true)
+        throw new Error("Failed to save application data")
       }
+
+      setIsSubmitted(true)
     } catch (error) {
-      alert("Network Error: " + String(error))
+      console.error("Submission error:", error)
+      alert("Something went wrong during submission. Check the console.")
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
 
+  if (isSubmitted) {
+    return (
+      <Card className="mx-auto max-w-2xl text-center">
+        <CardContent className="flex flex-col items-center gap-4 pt-10 pb-10">
+          <CheckCircle2 className="size-16 text-green-500" />
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Application Submitted!</h2>
+            <p className="text-muted-foreground">
+              Your application and documents have been sent to the scrutiny inspector.
+            </p>
+          </div>
+          <Button 
+            className="mt-4"
+            onClick={() => {
+              setIsSubmitted(false)
+              setCompanyName("")
+              setIndustry("")
+              setInvestment("")
+              setFile(null)
+            }}
+          >
+            Submit Another Application
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            New Application
-          </h1>
-          <Badge variant="secondary">Form 1-A</Badge>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          New Application Filing
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Submit company details to initiate a new regulatory compliance and incentive
-          eligibility review.
+          Submit a new compliance filing and upload your primary business documents.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <Building2 className="size-4.5" />
-            </div>
-            <div className="flex flex-col">
-              <CardTitle>Company Information</CardTitle>
-              <CardDescription>
-                All fields are required to submit an application for review.
-              </CardDescription>
-            </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="companyName">Company Name</Label>
+          <Input
+            id="companyName"
+            placeholder="Enter the full legal name"
+            required
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="industry">Industry Type</Label>
+          <Select required onValueChange={setIndustry} value={industry}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select primary sector" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manufacturing">Manufacturing</SelectItem>
+              <SelectItem value="technology">IT / Technology</SelectItem>
+              <SelectItem value="energy">Energy & Power</SelectItem>
+              <SelectItem value="retail">Retail & Commerce</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="investment">Investment Size</Label>
+          <Select required onValueChange={setInvestment} value={investment}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select capital investment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="under-5m">Under 5 Million INR</SelectItem>
+              <SelectItem value="5m-25m">5M to 25 Million INR</SelectItem>
+              <SelectItem value="25m-100m">25M to 100 Million INR</SelectItem>
+              <SelectItem value="over-100m">Over 100 Million INR</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* NEW FILE UPLOAD SECTION */}
+        <div className="space-y-2">
+          <Label htmlFor="document">Supporting Document (PDF/Image)</Label>
+          <div className="flex items-center gap-3">
+            <Input
+              id="document"
+              type="file"
+              required
+              className="cursor-pointer"
+              onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+            />
+            {file && <UploadCloud className="size-5 text-blue-600" />}
           </div>
-        </CardHeader>
+          <p className="text-xs text-muted-foreground">
+            Please upload your primary incorporation certificate or NOC.
+          </p>
+        </div>
 
-        <Separator />
-
-        <form onSubmit={handleSubmit}>
-          <CardContent className="pt-6">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="company-name">Company Name</FieldLabel>
-                <Input
-                  id="company-name"
-                  placeholder="e.g. Meridian Manufacturing Co."
-                  value={companyName}
-                  onChange={(event) => setCompanyName(event.target.value)}
-                  autoComplete="organization"
-                />
-                <FieldDescription>
-                  Enter the full legal name as registered with the state.
-                </FieldDescription>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="industry-type">Industry Type</FieldLabel>
-                <Select value={industry} onValueChange={setIndustry}>
-                  <SelectTrigger id="industry-type" className="w-full">
-                    <SelectValue placeholder="Select an industry" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {INDUSTRY_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <FieldDescription>
-                  Choose the primary sector this application applies to.
-                </FieldDescription>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="investment-size">Investment Size</FieldLabel>
-                <Select value={investmentSize} onValueChange={setInvestmentSize}>
-                  <SelectTrigger id="investment-size" className="w-full">
-                    <SelectValue placeholder="Select an investment range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {INVESTMENT_SIZE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <FieldDescription>
-                  Estimated total capital investment associated with this project.
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </CardContent>
-
-          <Separator />
-
-          <CardFooter className="flex items-center justify-between gap-3 pt-6">
-            {submitted ? (
-              <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
-                <CheckCircle2 className="size-4" />
-                Application submitted for review
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                Your application will be routed to a compliance officer within 2 business
-                days.
-              </span>
-            )}
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setCompanyName("")
-                  setIndustry("")
-                  setInvestmentSize("")
-                  setSubmitted(false)
-                }}
-              >
-                Reset
-              </Button>
-              <Button type="submit" disabled={!isValid || loading}>
-                {loading ? "Submitting..." : "Submit Application"}
-              </Button>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? "Uploading & Submitting..." : "Submit Application"}
+        </Button>
+      </form>
     </div>
   )
 }
