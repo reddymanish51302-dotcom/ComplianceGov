@@ -14,11 +14,13 @@ const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
 export function AuthorityPanel() {
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Track both feedback (reason) and solution independently for each application
   const [feedbackState, setFeedbackState] = useState<Record<number, string>>({})
+  const [solutionState, setSolutionState] = useState<Record<number, string>>({})
 
   const fetchApplications = async () => {
     try {
-      // Fetch only applications that are pending
       const response = await fetch(`${SUPABASE_URL}/rest/v1/application?status=eq.Pending&select=*`, {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -27,7 +29,6 @@ export function AuthorityPanel() {
       })
       const data = await response.json()
       
-      // Filter out only the ones the SI has forwarded to the Authority
       const forwarded = data.filter((app: any) => app.stage === "Forwarded to State Department Head")
       setApplications(forwarded)
     } catch (error) {
@@ -43,9 +44,11 @@ export function AuthorityPanel() {
 
   const handleFinalDecision = async (id: number, decision: "Approved" | "Rejected") => {
     const feedback = feedbackState[id] || ""
+    const solution = solutionState[id] || ""
 
-    if (decision === "Rejected" && !feedback.trim()) {
-      alert("You must provide a rejection reason/feedback before rejecting.")
+    // Validate that BOTH fields are filled out if rejecting
+    if (decision === "Rejected" && (!feedback.trim() || !solution.trim())) {
+      alert("You must provide BOTH a rejection reason and a proposed solution before rejecting.")
       return
     }
 
@@ -61,11 +64,10 @@ export function AuthorityPanel() {
           status: decision,
           stage: "Decision Finalized",
           feedback: decision === "Rejected" ? feedback : "Application fully verified and approved by Department Head.",
-          solution: decision === "Rejected" ? "Please rectify the issues mentioned in the feedback and submit a new application." : "N/A"
+          solution: decision === "Rejected" ? solution : "N/A"
         }),
       })
       
-      // Refresh the list after decision is made
       fetchApplications()
     } catch (error) {
       console.error("Update error:", error)
@@ -121,7 +123,8 @@ export function AuthorityPanel() {
 
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-2">
                   <h4 className="text-sm font-bold text-slate-800 mb-3">Final Decision Action</h4>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
+                    
                     <div className="space-y-1.5">
                       <Label className="text-xs text-slate-500">Rejection Reason (Required ONLY if Rejecting):</Label>
                       <Input 
@@ -130,6 +133,16 @@ export function AuthorityPanel() {
                         onChange={(e) => setFeedbackState({ ...feedbackState, [app.id]: e.target.value })}
                       />
                     </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-slate-500">Proposed Solution (Required ONLY if Rejecting):</Label>
+                      <Input 
+                        placeholder="e.g., 'Upload the renewed Fire NOC for 2026' or 'Attach Q3 Balance Sheet'" 
+                        value={solutionState[app.id] || ""}
+                        onChange={(e) => setSolutionState({ ...solutionState, [app.id]: e.target.value })}
+                      />
+                    </div>
+
                     <div className="flex gap-3 pt-2">
                       <Button onClick={() => handleFinalDecision(app.id, "Approved")} className="bg-green-600 hover:bg-green-700 text-white flex-1 h-11">
                         <CheckCircle className="mr-2 size-5" /> Final Approve
