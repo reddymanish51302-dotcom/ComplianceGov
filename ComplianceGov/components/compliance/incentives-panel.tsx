@@ -1,82 +1,81 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ArrowUpRight, Percent, TrendingUp, Leaf } from "lucide-react"
+"use client"
 
-const PROGRAMS = [
-  {
-    name: "Advanced Manufacturing Tax Credit",
-    icon: TrendingUp,
-    summary:
-      "Up to 15% credit on qualified capital expenditures for manufacturing facility upgrades and equipment.",
-    eligibility: "Manufacturing · Investment $5M+",
-    tag: "High Demand",
-  },
-  {
-    name: "Clean Energy Development Grant",
-    icon: Leaf,
-    summary:
-      "Matching grant funding for renewable energy infrastructure projects, up to $10M per applicant.",
-    eligibility: "Energy & Utilities · Investment $25M+",
-    tag: "New",
-  },
-  {
-    name: "Small Business Growth Rebate",
-    icon: Percent,
-    summary:
-      "Rebate covering up to 8% of qualifying expansion costs for companies investing under $5M.",
-    eligibility: "All Industries · Investment under $5M",
-    tag: "Popular",
-  },
-]
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { IndianRupee, Zap, Briefcase, Factory } from "lucide-react"
 
 export function IncentivesPanel() {
+  const schemes = [
+    {
+      title: "Manufacturing PLI Scheme",
+      industry: "Manufacturing",
+      benefit: "4% to 6% incentive on incremental sales",
+      icon: <Factory className="size-5 text-blue-600" />,
+      status: "Active",
+    },
+    {
+      title: "IT/Tech Startup Tax Holiday",
+      industry: "Technology",
+      benefit: "100% tax exemption for 3 consecutive years",
+      icon: <Zap className="size-5 text-yellow-600" />,
+      status: "Active",
+    },
+    {
+      title: "Green Energy Subsidy",
+      industry: "Energy",
+      benefit: "Up to 30% capital subsidy for solar installations",
+      icon: <IndianRupee className="size-5 text-green-600" />,
+      status: "Active",
+    },
+    {
+      title: "MSME Employment Generation",
+      industry: "All Sectors",
+      benefit: "PF reimbursement for new hires",
+      icon: <Briefcase className="size-5 text-purple-600" />,
+      status: "Closing Soon",
+    }
+  ]
+
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Incentives</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Government Incentives & Schemes
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Explore government incentive programs your organization may be eligible for based on
-          industry and investment size.
+          Discover available financial subsidies and tax benefits based on your industry.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {PROGRAMS.map((program) => {
-          const Icon = program.icon
-          return (
-            <Card key={program.name} className="flex flex-col">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    <Icon className="size-4.5" />
-                  </div>
-                  <Badge variant="secondary">{program.tag}</Badge>
+      <div className="grid gap-4 md:grid-cols-2">
+        {schemes.map((scheme, index) => (
+          <Card key={index} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {scheme.icon}
+                  <CardTitle className="text-lg">{scheme.title}</CardTitle>
                 </div>
-                <CardTitle className="pt-2 text-base">{program.name}</CardTitle>
-                <CardDescription>{program.summary}</CardDescription>
-              </CardHeader>
-              <CardContent className="mt-auto pt-0">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {program.eligibility}
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">
-                  View Requirements
-                  <ArrowUpRight data-icon="inline-end" />
-                </Button>
-              </CardFooter>
-            </Card>
-          )
-        })}
+              </div>
+              <CardDescription className="pt-2">
+                Target Sector: <span className="font-medium text-slate-700">{scheme.industry}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border bg-slate-50 p-3">
+                <p className="text-sm font-medium text-slate-900">{scheme.benefit}</p>
+              </div>
+              <div className="mt-4 flex justify-between items-center">
+                <Badge variant={scheme.status === "Active" ? "default" : "destructive"}>
+                  {scheme.status}
+                </Badge>
+                <button className="text-sm font-medium text-blue-600 hover:underline">
+                  Check Eligibility &rarr;
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   )
