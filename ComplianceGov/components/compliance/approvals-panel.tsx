@@ -10,7 +10,7 @@ import { FileText, CheckCircle, Clock } from "lucide-react"
 const SUPABASE_URL = "https://leolsqraajajphguipzx.supabase.co"
 const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
 
-export default function ApprovalsPage() {
+export function ApprovalsPanel() {
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
