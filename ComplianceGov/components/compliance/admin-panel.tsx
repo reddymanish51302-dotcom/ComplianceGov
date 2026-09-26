@@ -38,16 +38,20 @@ export function AdminPanel() {
 
   const handleUpdateStatus = async (id: number, newStatus: string) => {
     let rejectionReason = null
+    let fixSolution = null
 
-    // If rejecting, ask the SI for a reason
+    // Ask for Reason AND Solution
     if (newStatus === "Rejected") {
-      rejectionReason = window.prompt("Please enter the reason for rejection (e.g., Missing Fire NOC):")
-      if (rejectionReason === null) return // Cancelled by user
+      rejectionReason = window.prompt("1. REASON: Why is this application being rejected?")
+      if (rejectionReason === null) return // User cancelled
+      
+      fixSolution = window.prompt("2. SOLUTION: What should the entrepreneur do to fix this?")
     }
 
     try {
       const updateData: any = { status: newStatus }
       if (rejectionReason) updateData.feedback = rejectionReason
+      if (fixSolution) updateData.solution = fixSolution
 
       const response = await fetch(`${SUPABASE_URL}/rest/v1/application?id=eq.${id}`, {
         method: "PATCH",
@@ -60,7 +64,7 @@ export function AdminPanel() {
       })
 
       if (response.ok) {
-        fetchApplications() // Refresh list
+        fetchApplications() // Refresh the UI
       }
     } catch (error) {
       console.error("Update error:", error)
@@ -97,7 +101,7 @@ export function AdminPanel() {
                   <div className="text-sm text-slate-600 pl-8">
                     <p>Investment: <span className="font-medium">{app.investment_size}</span></p>
                     
-                    {/* View Document Link */}
+                    {/* Shows the exact file name now */}
                     {app.document_url ? (
                       <a 
                         href={app.document_url} 
@@ -106,7 +110,7 @@ export function AdminPanel() {
                         className="mt-2 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline font-medium"
                       >
                         <FileText className="size-4" />
-                        View Attached Document <ExternalLink className="size-3" />
+                        {app.document_name || "View Attached Document"} <ExternalLink className="size-3" />
                       </a>
                     ) : (
                       <p className="mt-2 text-red-500 text-xs italic">No document attached.</p>
