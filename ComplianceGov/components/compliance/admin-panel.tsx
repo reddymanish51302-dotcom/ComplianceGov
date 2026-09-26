@@ -4,8 +4,8 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Building, CheckCircle, XCircle, FileText, ExternalLink } from "lucide-react"
 
-// HARDCODED SUPABASE CREDENTIALS
 const SUPABASE_URL = "https://leolsqraajajphguipzx.supabase.co"
 const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
 
@@ -13,7 +13,10 @@ export function AdminPanel() {
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch all applications
+  useEffect(() => {
+    fetchApplications()
+  }, [])
+
   const fetchApplications = async () => {
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/application?select=*`, {
@@ -27,96 +30,110 @@ export function AdminPanel() {
         setApplications(data.reverse())
       }
     } catch (error) {
-      console.error("Failed to fetch:", error)
+      console.error("Fetch error:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    fetchApplications()
-  }, [])
+  const handleUpdateStatus = async (id: number, newStatus: string) => {
+    let rejectionReason = null
 
-  // Function to Update Status in Supabase
-  const updateStatus = async (id: number, newStatus: string) => {
+    // If rejecting, ask the SI for a reason
+    if (newStatus === "Rejected") {
+      rejectionReason = window.prompt("Please enter the reason for rejection (e.g., Missing Fire NOC):")
+      if (rejectionReason === null) return // Cancelled by user
+    }
+
     try {
+      const updateData: any = { status: newStatus }
+      if (rejectionReason) updateData.feedback = rejectionReason
+
       const response = await fetch(`${SUPABASE_URL}/rest/v1/application?id=eq.${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           apikey: SUPABASE_ANON_KEY,
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          Prefer: "return=representation"
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(updateData),
       })
-      
+
       if (response.ok) {
-        // Refresh the list after updating
-        fetchApplications()
-        alert(`Application marked as ${newStatus}`)
+        fetchApplications() // Refresh list
       }
     } catch (error) {
-      console.error("Error updating status:", error)
+      console.error("Update error:", error)
     }
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-bold text-slate-900">SI / Admin Dashboard</h1>
-        <p className="text-sm text-slate-500">Review and approve pending business compliance applications.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Scrutiny Inspector Dashboard</h1>
+        <p className="text-sm text-slate-500">Review pending applications and verify documents.</p>
       </div>
 
       {loading ? (
         <div className="h-32 w-full animate-pulse rounded-xl bg-slate-100" />
       ) : (
         <div className="grid gap-4">
-          {applications.map((app, index) => {
-            // Check status safely by converting it to lowercase
-            const currentStatus = app.status ? app.status.toLowerCase() : "pending"
-            
-            return (
-              <Card key={index} className="border-l-4 border-l-blue-600">
-                <CardHeader className="pb-3 flex flex-row items-start justify-between">
-                  <div>
-                    <CardTitle className="text-xl">{app.company_name}</CardTitle>
-                    <p className="text-sm text-slate-500 mt-1">
-                      Industry: {app.industry_type} | Investment: {app.investment_size}
-                    </p>
+          {applications.map((app) => (
+            <Card key={app.id} className="border shadow-sm">
+              <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <Building className="size-5 text-slate-400" />
+                    <h3 className="text-lg font-semibold">{app.company_name}</h3>
+                    <Badge variant="outline" className="capitalize">{app.industry_type}</Badge>
+                    <Badge className={
+                      app.status === "Approved" ? "bg-green-500" :
+                      app.status === "Rejected" ? "bg-red-500" : "bg-yellow-500"
+                    }>
+                      {app.status || "Pending"}
+                    </Badge>
                   </div>
-                  <Badge 
+                  
+                  <div className="text-sm text-slate-600 pl-8">
+                    <p>Investment: <span className="font-medium">{app.investment_size}</span></p>
+                    
+                    {/* View Document Link */}
+                    {app.document_url ? (
+                      <a 
+                        href={app.document_url} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                      >
+                        <FileText className="size-4" />
+                        View Attached Document <ExternalLink className="size-3" />
+                      </a>
+                    ) : (
+                      <p className="mt-2 text-red-500 text-xs italic">No document attached.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button 
                     variant="outline" 
-                    className={
-                      currentStatus === "approved" ? "bg-green-100 text-green-700 uppercase" :
-                      currentStatus === "rejected" ? "bg-red-100 text-red-700 uppercase" :
-                      "bg-yellow-100 text-yellow-700 uppercase"
-                    }
+                    className="w-full sm:w-auto border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={() => handleUpdateStatus(app.id, "Rejected")}
+                    disabled={app.status === "Approved" || app.status === "Rejected"}
                   >
-                    {app.status || "PENDING"}
-                  </Badge>
-                </CardHeader>
-                
-                {/* Now the buttons will show up safely! */}
-                {currentStatus === "pending" && (
-                  <CardContent className="flex gap-3 border-t pt-4 bg-slate-50">
-                    <Button 
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => updateStatus(app.id, "Approved")}
-                    >
-                      Approve Application
-                    </Button>
-                    <Button 
-                      variant="destructive"
-                      onClick={() => updateStatus(app.id, "Rejected")}
-                    >
-                      Reject
-                    </Button>
-                  </CardContent>
-                )}
-              </Card>
-            )
-          })}
+                    <XCircle className="mr-2 size-4" /> Reject
+                  </Button>
+                  <Button 
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                    onClick={() => handleUpdateStatus(app.id, "Approved")}
+                    disabled={app.status === "Approved" || app.status === "Rejected"}
+                  >
+                    <CheckCircle className="mr-2 size-4" /> Approve
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
