@@ -20,35 +20,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function Page() {
-  // Authentication State
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userRole, setUserRole] = useState<"entrepreneur" | "si" | null>(null)
   const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
 
-  // Navigation State
   const [activeTab, setActiveTab] = useState<DashboardTab | "admin">("new-application")
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
-  // Fallback for active item details
   const activeItem = NAV_ITEMS.find((item) => item.id === activeTab) || {
     id: "admin",
     label: "Admin / SI Dashboard",
-    description: "Secure area for System Inspectors to review and approve applications."
+    description: "Secure area for System Inspectors to review and route applications."
   }
 
-  // --- HACKATHON LOGIN LOGIC ---
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // The "Secret Agent" trick: If the password is admin123, log them in as the SI.
     if (loginPassword === "admin123") {
       setUserRole("si")
       setActiveTab("admin")
       setIsLoggedIn(true)
-    } 
-    // Otherwise, treat them as a normal Entrepreneur
-    else if (loginEmail && loginPassword) {
+    } else if (loginEmail && loginPassword) {
       setUserRole("entrepreneur")
       setActiveTab("new-application")
       setIsLoggedIn(true)
@@ -62,7 +54,6 @@ export default function Page() {
     setLoginPassword("")
   }
 
-  // 1. IF NOT LOGGED IN: Show the beautiful Login Screen
   if (!isLoggedIn) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
@@ -114,22 +105,14 @@ export default function Page() {
                 Secure Sign In <ArrowRight className="ml-2 size-4" />
               </Button>
               
-              {/* HACKATHON JUDGE CREDENTIALS BOX */}
               <div className="mt-6 w-full rounded-md bg-slate-100 p-4 text-sm text-slate-700 border border-slate-200">
-                <p className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <span>🧑‍⚖️</span> Hackathon Demo Credentials
+                <p className="font-bold text-slate-900 mb-2 flex items-center gap-2">
+                  <span>🧑‍⚖️</span> Hackathon Demo Logins
                 </p>
-                <div className="space-y-3">
-                  <div>
-                    <p className="font-semibold text-blue-700 text-xs uppercase tracking-wider mb-1">Entrepreneur Login</p>
-                    <p className="text-xs">Email: <code className="bg-white px-1.5 py-0.5 rounded border font-mono">founder@demo.com</code></p>
-                    <p className="text-xs">Pass: <code className="bg-white px-1.5 py-0.5 rounded border font-mono">demo</code> <span className="text-slate-400 italic">(or any text)</span></p>
-                  </div>
-                  <div className="pt-2 border-t border-slate-200">
-                    <p className="font-semibold text-red-700 text-xs uppercase tracking-wider mb-1">Govt Inspector Login</p>
-                    <p className="text-xs">Email: <code className="bg-white px-1.5 py-0.5 rounded border font-mono">admin@gov.in</code></p>
-                    <p className="text-xs">Pass: <code className="bg-white px-1.5 py-0.5 rounded border font-mono font-bold text-red-600">admin123</code></p>
-                  </div>
+                <div className="space-y-2 text-xs">
+                  <p>Entrepreneur A: <code className="bg-white px-1 py-0.5 rounded border">user1@startup.com</code> / Any Pass</p>
+                  <p>Entrepreneur B: <code className="bg-white px-1 py-0.5 rounded border">user2@tech.com</code> / Any Pass</p>
+                  <p>Govt Inspector: <code className="bg-white px-1 py-0.5 rounded border">admin@gov.in</code> / Pass: <code className="font-bold text-red-600">admin123</code></p>
                 </div>
               </div>
             </CardFooter>
@@ -139,25 +122,18 @@ export default function Page() {
     )
   }
 
-  // 2. IF LOGGED IN: Show the Main Application Dashboard
   return (
     <div className="flex h-screen w-full bg-background">
-      {/* Hide the Sidebar if they are logged in as the Inspector */}
       {userRole === "entrepreneur" && (
         <DashboardSidebar activeTab={activeTab as DashboardTab} onTabChange={setActiveTab as any} />
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top Header */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 sm:px-6 md:h-16 md:px-10 shadow-sm z-10">
-          
           <div className="flex items-center gap-3">
             {userRole === "entrepreneur" && (
               <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-                <SheetTrigger
-                  className={buttonVariants({ variant: "outline", size: "icon", className: "md:hidden" })}
-                  aria-label="Open navigation menu"
-                >
+                <SheetTrigger className={buttonVariants({ variant: "outline", size: "icon", className: "md:hidden" })}>
                   <Menu />
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72 p-0">
@@ -179,38 +155,23 @@ export default function Page() {
               </div>
               <span className="text-lg font-bold text-slate-900 hidden sm:inline-block">ComplianceGov</span>
             </div>
-
-            {userRole === "entrepreneur" && (
-              <div className="hidden flex-col md:flex ml-4 border-l pl-4">
-                <h1 className="text-sm font-semibold leading-tight text-slate-900">{activeItem.label}</h1>
-                <p className="text-xs leading-tight text-slate-500">{activeItem.description}</p>
-              </div>
-            )}
           </div>
 
-          {/* User Profile & Logout Button (Replaces the old SI Login) */}
           <div className="flex items-center gap-4">
             <div className="hidden text-sm font-medium text-slate-700 md:flex flex-col items-end">
               <span>{userRole === "si" ? "Inspector Portal" : loginEmail}</span>
               <span className="text-xs text-slate-400 capitalize">{userRole} Account</span>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleLogout}
-              className="flex items-center gap-2 border-slate-200 hover:bg-slate-100 text-slate-700"
-            >
-              <LogOut className="size-4" />
-              <span className="hidden sm:inline">Sign Out</span>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
+              <LogOut className="size-4" /> Sign Out
             </Button>
           </div>
         </header>
 
-        {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto bg-slate-50/50">
           <div className="px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10 h-full">
-            {activeTab === "new-application" && <NewApplicationForm />}
-            {activeTab === "approvals" && <ApprovalsPanel />}
+            {activeTab === "new-application" && <NewApplicationForm userEmail={loginEmail} />}
+            {activeTab === "approvals" && <ApprovalsPanel userEmail={loginEmail} />}
             {activeTab === "incentives" && <IncentivesPanel />}
             {activeTab === "admin" && <AdminPanel />}
           </div>
