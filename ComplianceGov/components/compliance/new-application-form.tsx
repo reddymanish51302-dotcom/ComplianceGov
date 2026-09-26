@@ -5,18 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { CheckCircle2, UploadCloud } from "lucide-react"
 
-// HARDCODED SUPABASE CREDENTIALS
 const SUPABASE_URL = "https://leolsqraajajphguipzx.supabase.co"
 const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
 
-export function NewApplicationForm() {
+export function NewApplicationForm({ userEmail }: { userEmail?: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   
-  // Form State
   const [companyName, setCompanyName] = useState("")
   const [industry, setIndustry] = useState("")
   const [investment, setInvestment] = useState("")
@@ -29,9 +27,7 @@ export function NewApplicationForm() {
     try {
       let documentUrl = null
 
-      // 1. UPLOAD FILE TO STORAGE
       if (file) {
-        // Generate a 100% URL-safe filename (e.g., 1709848_doc.png)
         const fileExt = file.name.split('.').pop()
         const safeFileName = `${Date.now()}_doc.${fileExt}`
         
@@ -40,23 +36,23 @@ export function NewApplicationForm() {
           headers: {
             apikey: SUPABASE_ANON_KEY,
             Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            // Fallback to octet-stream if the browser fails to detect the file type
             "Content-Type": file.type || "application/octet-stream",
           },
           body: file,
         })
 
         if (!uploadResponse.ok) {
-          // This will print the EXACT error from Supabase in your console
-          const errorText = await uploadResponse.text()
-          console.error("Supabase Upload Error:", errorText)
           throw new Error("Failed to upload document")
         }
 
         documentUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${safeFileName}`
       }
 
-      // 2. SAVE DATA TO DATABASE
+      // Calculate 7-Day SLA Target Date
+      const targetDate = new Date()
+      targetDate.setDate(targetDate.getDate() + 7)
+      const formattedDeadline = targetDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+
       const response = await fetch(`${SUPABASE_URL}/rest/v1/application`, {
         method: "POST",
         headers: {
@@ -66,23 +62,23 @@ export function NewApplicationForm() {
           Prefer: "return=minimal"
         },
         body: JSON.stringify({
+          user_email: userEmail || "anonymous@user.com",
           company_name: companyName,
           industry_type: industry,
           investment_size: investment,
           document_url: documentUrl, 
-          document_name: file ? file.name : "Unknown Document", // <-- ADDED THIS LINE TO SAVE FILE NAME
-          status: "Pending"
+          document_name: file ? file.name : "Document.pdf",
+          status: "Pending",
+          stage: "Under SI Review",
+          deadline: formattedDeadline
         }),
       })
 
-      if (!response.ok) {
-        throw new Error("Failed to save application data")
-      }
-
+      if (!response.ok) throw new Error("Failed to save application")
       setIsSubmitted(true)
     } catch (error) {
       console.error("Submission error:", error)
-      alert("Something went wrong during submission. Check the console.")
+      alert("Submission error. Ensure Supabase columns match.")
     } finally {
       setIsSubmitting(false)
     }
@@ -90,13 +86,13 @@ export function NewApplicationForm() {
 
   if (isSubmitted) {
     return (
-      <Card className="mx-auto max-w-2xl text-center">
+      <Card className="mx-auto max-w-2xl text-center shadow-md">
         <CardContent className="flex flex-col items-center gap-4 pt-10 pb-10">
           <CheckCircle2 className="size-16 text-green-500" />
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Application Submitted!</h2>
-            <p className="text-muted-foreground">
-              Your application and documents have been sent to the scrutiny inspector.
+            <h2 className="text-2xl font-bold text-slate-900">Application Filed Successfully!</h2>
+            <p className="text-sm text-slate-600">
+              Submitted for <span className="font-semibold text-slate-900">{userEmail}</span>. Assigned to Scrutiny Inspector.
             </p>
           </div>
           <Button 
@@ -119,68 +115,22 @@ export function NewApplicationForm() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          New Application Filing
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Submit a new compliance filing and upload your primary business documents.
+        <h1 className="text-2xl font-bold text-slate-900">New Application Filing</h1>
+        <p className="text-sm text-slate-500">
+          Filing application as: <span className="font-semibold text-blue-600">{userEmail || "Guest"}</span>
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="space-y-2">
           <Label htmlFor="companyName">Company Name</Label>
-          <Input
-            id="companyName"
-            placeholder="Enter the full legal name"
-            required
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-          />
+          <Input id="companyName" placeholder="Enter full legal company name" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="industry">Industry Type</Label>
-          {/* DYNAMIC DOCUMENT REQUIREMENTS */}
-        {industry && (
-          <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
-            <h4 className="text-sm font-semibold text-blue-900 mb-2">
-              Required Documents for {industry.charAt(0).toUpperCase() + industry.slice(1)} Sector:
-            </h4>
-            <ul className="list-disc pl-5 text-sm text-blue-800 space-y-1">
-              {industry === "manufacturing" && (
-                <>
-                  <li>State Pollution Control Board Clearance (NOC)</li>
-                  <li>Factory Inspectorate License</li>
-                  <li>Fire Safety Certificate</li>
-                </>
-              )}
-              {industry === "technology" && (
-                <>
-                  <li>Shops and Establishments Registration</li>
-                  <li>Data Privacy & Security Compliance Declaration</li>
-                </>
-              )}
-              {industry === "energy" && (
-                <>
-                  <li>Environmental Impact Assessment (EIA) Report</li>
-                  <li>Ministry of Power Grid Connectivity Approval</li>
-                </>
-              )}
-              {industry === "retail" && (
-                <>
-                  <li>Trade License from Local Municipality</li>
-                  <li>FSSAI License (If selling food/beverages)</li>
-                  <li>GST Registration Certificate</li>
-                </>
-              )}
-            </ul>
-          </div>
-        )}
+          <Label htmlFor="industry">Industry Sector</Label>
           <Select required onValueChange={setIndustry} value={industry}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select primary sector" />
-            </SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Select primary sector" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="manufacturing">Manufacturing</SelectItem>
               <SelectItem value="technology">IT / Technology</SelectItem>
@@ -191,11 +141,9 @@ export function NewApplicationForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="investment">Investment Size</Label>
+          <Label htmlFor="investment">Investment Capital</Label>
           <Select required onValueChange={setInvestment} value={investment}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select capital investment" />
-            </SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Select capital investment" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="under-5m">Under 5 Million INR</SelectItem>
               <SelectItem value="5m-25m">5M to 25 Million INR</SelectItem>
@@ -206,23 +154,14 @@ export function NewApplicationForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="document">Supporting Document (PDF/Image)</Label>
+          <Label htmlFor="document">Upload Certificate / NOC</Label>
           <div className="flex items-center gap-3">
-            <Input
-              id="document"
-              type="file"
-              required
-              className="cursor-pointer"
-              onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-            />
-            {file && <UploadCloud className="size-5 text-blue-600" />}
+            <Input id="document" type="file" required className="cursor-pointer" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} />
+            {file && <UploadCloud className="size-5 text-blue-600 shrink-0" />}
           </div>
-          <p className="text-xs text-muted-foreground">
-            Please upload your primary incorporation certificate or NOC.
-          </p>
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="w-full">
+        <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700">
           {isSubmitting ? "Uploading & Submitting..." : "Submit Application"}
         </Button>
       </form>
