@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building, CheckCircle, XCircle, FileText, ExternalLink } from "lucide-react"
+import { Building, CheckCircle, XCircle, FileText, ExternalLink, Send, Clock, User } from "lucide-react"
 
 const SUPABASE_URL = "https://leolsqraajajphguipzx.supabase.co"
 const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
@@ -20,10 +20,7 @@ export function AdminPanel() {
   const fetchApplications = async () => {
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/application?select=*`, {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        },
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
       })
       if (response.ok) {
         const data = await response.json()
@@ -36,20 +33,18 @@ export function AdminPanel() {
     }
   }
 
-  const handleUpdateStatus = async (id: number, newStatus: string) => {
+  const updateWorkflow = async (id: number, status: string, stage: string) => {
     let rejectionReason = null
     let fixSolution = null
 
-    // Ask for Reason AND Solution
-    if (newStatus === "Rejected") {
-      rejectionReason = window.prompt("1. REASON: Why is this application being rejected?")
-      if (rejectionReason === null) return // User cancelled
-      
-      fixSolution = window.prompt("2. SOLUTION: What should the entrepreneur do to fix this?")
+    if (status === "Rejected") {
+      rejectionReason = window.prompt("1. Why is this application being rejected?")
+      if (rejectionReason === null) return
+      fixSolution = window.prompt("2. What solution/action should the entrepreneur take?")
     }
 
     try {
-      const updateData: any = { status: newStatus }
+      const updateData: any = { status, stage }
       if (rejectionReason) updateData.feedback = rejectionReason
       if (fixSolution) updateData.solution = fixSolution
 
@@ -63,9 +58,7 @@ export function AdminPanel() {
         body: JSON.stringify(updateData),
       })
 
-      if (response.ok) {
-        fetchApplications() // Refresh the UI
-      }
+      if (response.ok) fetchApplications()
     } catch (error) {
       console.error("Update error:", error)
     }
@@ -73,9 +66,9 @@ export function AdminPanel() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-bold text-slate-900">Scrutiny Inspector Dashboard</h1>
-        <p className="text-sm text-slate-500">Review pending applications and verify documents.</p>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Scrutiny Inspector Command Center</h1>
+        <p className="text-sm text-slate-500">Review filings, inspect attached documents, and route to authorities.</p>
       </div>
 
       {loading ? (
@@ -84,55 +77,79 @@ export function AdminPanel() {
         <div className="grid gap-4">
           {applications.map((app) => (
             <Card key={app.id} className="border shadow-sm">
-              <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex flex-col gap-2">
+              <CardContent className="p-6 flex flex-col gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
                   <div className="flex items-center gap-3">
                     <Building className="size-5 text-slate-400" />
                     <h3 className="text-lg font-semibold">{app.company_name}</h3>
                     <Badge variant="outline" className="capitalize">{app.industry_type}</Badge>
                     <Badge className={
-                      app.status === "Approved" ? "bg-green-500" :
-                      app.status === "Rejected" ? "bg-red-500" : "bg-yellow-500"
+                      app.status === "Approved" ? "bg-green-600" :
+                      app.status === "Rejected" ? "bg-red-600" : "bg-amber-500"
                     }>
                       {app.status || "Pending"}
                     </Badge>
                   </div>
                   
-                  <div className="text-sm text-slate-600 pl-8">
-                    <p>Investment: <span className="font-medium">{app.investment_size}</span></p>
-                    
-                    {/* Shows the exact file name now */}
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    <Clock className="size-3 text-amber-600" /> SLA Deadline: {app.deadline || "7 Days"}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-600">
+                  <div>
+                    <p className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                      <User className="size-3.5" /> Applicant Email:
+                    </p>
+                    <p className="font-semibold text-slate-900">{app.user_email || "N/A"}</p>
+                    <p className="mt-2 text-xs text-slate-500">Capital Investment: <span className="font-medium text-slate-800">{app.investment_size}</span></p>
+                  </div>
+
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <p className="text-xs font-semibold text-slate-500 mb-1">Uploaded Document Verification:</p>
                     {app.document_url ? (
                       <a 
                         href={app.document_url} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                        className="inline-flex items-center gap-2 text-blue-600 font-medium hover:underline text-sm"
                       >
-                        <FileText className="size-4" />
-                        {app.document_name || "View Attached Document"} <ExternalLink className="size-3" />
+                        <FileText className="size-4 shrink-0" />
+                        <span className="truncate max-w-[220px]">{app.document_name || "View Document"}</span>
+                        <ExternalLink className="size-3" />
                       </a>
                     ) : (
-                      <p className="mt-2 text-red-500 text-xs italic">No document attached.</p>
+                      <p className="text-xs text-red-500 italic">No document attached.</p>
                     )}
+                    <p className="text-xs text-slate-400 mt-2">Current Stage: <span className="font-semibold text-slate-700">{app.stage || "Under SI Review"}</span></p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t">
                   <Button 
                     variant="outline" 
-                    className="w-full sm:w-auto border-red-200 text-red-600 hover:bg-red-50"
-                    onClick={() => handleUpdateStatus(app.id, "Rejected")}
-                    disabled={app.status === "Approved" || app.status === "Rejected"}
+                    size="sm"
+                    className="border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={() => updateWorkflow(app.id, "Rejected", "Action Required")}
                   >
-                    <XCircle className="mr-2 size-4" /> Reject
+                    <XCircle className="mr-1.5 size-4" /> Reject & Request Fix
                   </Button>
+
                   <Button 
-                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
-                    onClick={() => handleUpdateStatus(app.id, "Approved")}
-                    disabled={app.status === "Approved" || app.status === "Rejected"}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                    onClick={() => updateWorkflow(app.id, "Pending", "Forwarded to State Department Head")}
                   >
-                    <CheckCircle className="mr-2 size-4" /> Approve
+                    <Send className="mr-1.5 size-4" /> Forward to Higher Authority
+                  </Button>
+
+                  <Button 
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => updateWorkflow(app.id, "Approved", "Final Approval Granted")}
+                  >
+                    <CheckCircle className="mr-1.5 size-4" /> Grant Final Approval
                   </Button>
                 </div>
               </CardContent>
