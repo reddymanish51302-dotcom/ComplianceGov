@@ -29,27 +29,31 @@ export function NewApplicationForm() {
     try {
       let documentUrl = null
 
-      // 1. UPLOAD FILE TO STORAGE (If a file was selected)
+      // 1. UPLOAD FILE TO STORAGE
       if (file) {
-        // Create a unique file name so uploads don't overwrite each other
-        const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`
+        // Generate a 100% URL-safe filename (e.g., 1709848_doc.png)
+        const fileExt = file.name.split('.').pop()
+        const safeFileName = `${Date.now()}_doc.${fileExt}`
         
-        const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${fileName}`, {
+        const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${safeFileName}`, {
           method: "POST",
           headers: {
             apikey: SUPABASE_ANON_KEY,
             Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": file.type,
+            // Fallback to octet-stream if the browser fails to detect the file type
+            "Content-Type": file.type || "application/octet-stream",
           },
           body: file,
         })
 
         if (!uploadResponse.ok) {
+          // This will print the EXACT error from Supabase in your console
+          const errorText = await uploadResponse.text()
+          console.error("Supabase Upload Error:", errorText)
           throw new Error("Failed to upload document")
         }
 
-        // Generate the public URL for the uploaded file
-        documentUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${fileName}`
+        documentUrl = `${SUPABASE_URL}/storage/v1/object/public/documents/${safeFileName}`
       }
 
       // 2. SAVE DATA TO DATABASE
@@ -164,7 +168,6 @@ export function NewApplicationForm() {
           </Select>
         </div>
 
-        {/* NEW FILE UPLOAD SECTION */}
         <div className="space-y-2">
           <Label htmlFor="document">Supporting Document (PDF/Image)</Label>
           <div className="flex items-center gap-3">
