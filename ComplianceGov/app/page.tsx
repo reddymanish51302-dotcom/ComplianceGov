@@ -109,10 +109,29 @@ export default function Page() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="pt-2 pb-6">
+            <CardFooter className="flex-col pt-2 pb-6">
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-md h-11">
                 Secure Sign In <ArrowRight className="ml-2 size-4" />
               </Button>
+              
+              {/* HACKATHON JUDGE CREDENTIALS BOX */}
+              <div className="mt-6 w-full rounded-md bg-slate-100 p-4 text-sm text-slate-700 border border-slate-200">
+                <p className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                  <span>🧑‍⚖️</span> Hackathon Demo Credentials
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold text-blue-700 text-xs uppercase tracking-wider mb-1">Entrepreneur Login</p>
+                    <p className="text-xs">Email: <code className="bg-white px-1.5 py-0.5 rounded border font-mono">founder@demo.com</code></p>
+                    <p className="text-xs">Pass: <code className="bg-white px-1.5 py-0.5 rounded border font-mono">demo</code> <span className="text-slate-400 italic">(or any text)</span></p>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200">
+                    <p className="font-semibold text-red-700 text-xs uppercase tracking-wider mb-1">Govt Inspector Login</p>
+                    <p className="text-xs">Email: <code className="bg-white px-1.5 py-0.5 rounded border font-mono">admin@gov.in</code></p>
+                    <p className="text-xs">Pass: <code className="bg-white px-1.5 py-0.5 rounded border font-mono font-bold text-red-600">admin123</code></p>
+                  </div>
+                </div>
+              </div>
             </CardFooter>
           </form>
         </Card>
