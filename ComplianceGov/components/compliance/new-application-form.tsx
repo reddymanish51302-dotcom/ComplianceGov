@@ -140,6 +140,42 @@ export function NewApplicationForm() {
 
         <div className="space-y-2">
           <Label htmlFor="industry">Industry Type</Label>
+          {/* DYNAMIC DOCUMENT REQUIREMENTS */}
+        {industry && (
+          <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
+            <h4 className="text-sm font-semibold text-blue-900 mb-2">
+              Required Documents for {industry.charAt(0).toUpperCase() + industry.slice(1)} Sector:
+            </h4>
+            <ul className="list-disc pl-5 text-sm text-blue-800 space-y-1">
+              {industry === "manufacturing" && (
+                <>
+                  <li>State Pollution Control Board Clearance (NOC)</li>
+                  <li>Factory Inspectorate License</li>
+                  <li>Fire Safety Certificate</li>
+                </>
+              )}
+              {industry === "technology" && (
+                <>
+                  <li>Shops and Establishments Registration</li>
+                  <li>Data Privacy & Security Compliance Declaration</li>
+                </>
+              )}
+              {industry === "energy" && (
+                <>
+                  <li>Environmental Impact Assessment (EIA) Report</li>
+                  <li>Ministry of Power Grid Connectivity Approval</li>
+                </>
+              )}
+              {industry === "retail" && (
+                <>
+                  <li>Trade License from Local Municipality</li>
+                  <li>FSSAI License (If selling food/beverages)</li>
+                  <li>GST Registration Certificate</li>
+                </>
+              )}
+            </ul>
+          </div>
+        )}
           <Select required onValueChange={setIndustry} value={industry}>
             <SelectTrigger>
               <SelectValue placeholder="Select primary sector" />
