@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
-import { CheckCircle2, UploadCloud } from "lucide-react"
+import { CheckCircle2, UploadCloud, FileText } from "lucide-react"
 
 const SUPABASE_URL = "https://leolsqraajajphguipzx.supabase.co"
 const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
@@ -96,7 +96,7 @@ export function NewApplicationForm({ userEmail }: { userEmail?: string }) {
             </p>
           </div>
           <Button 
-            className="mt-4"
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
             onClick={() => {
               setIsSubmitted(false)
               setCompanyName("")
@@ -138,6 +138,43 @@ export function NewApplicationForm({ userEmail }: { userEmail?: string }) {
               <SelectItem value="retail">Retail & Commerce</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* FIXED: DYNAMIC DOCUMENT REQUIREMENTS DISPLAY */}
+          {industry && (
+            <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-4">
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                Required Documents for {industry.charAt(0).toUpperCase() + industry.slice(1)} Sector:
+              </h4>
+              <ul className="list-disc pl-5 text-sm text-blue-800 space-y-1">
+                {industry === "manufacturing" && (
+                  <>
+                    <li>State Pollution Control Board Clearance (NOC)</li>
+                    <li>Factory Inspectorate License</li>
+                    <li>Fire Safety Certificate</li>
+                  </>
+                )}
+                {industry === "technology" && (
+                  <>
+                    <li>Shops and Establishments Registration</li>
+                    <li>Data Privacy & Security Compliance Declaration</li>
+                  </>
+                )}
+                {industry === "energy" && (
+                  <>
+                    <li>Environmental Impact Assessment (EIA) Report</li>
+                    <li>Ministry of Power Grid Connectivity Approval</li>
+                  </>
+                )}
+                {industry === "retail" && (
+                  <>
+                    <li>Trade License from Local Municipality</li>
+                    <li>FSSAI License (If selling food/beverages)</li>
+                    <li>GST Registration Certificate</li>
+                  </>
+                )}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -159,9 +196,17 @@ export function NewApplicationForm({ userEmail }: { userEmail?: string }) {
             <Input id="document" type="file" required className="cursor-pointer" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} />
             {file && <UploadCloud className="size-5 text-blue-600 shrink-0" />}
           </div>
+          
+          {/* FIXED: SHOW THE SELECTED FILE NAME TO THE USER */}
+          {file && (
+            <div className="mt-2 flex items-center gap-2 rounded-md bg-blue-50/80 p-2.5 text-sm text-blue-700 border border-blue-200">
+              <FileText className="size-4 shrink-0" />
+              <span className="font-medium truncate">Selected: {file.name}</span>
+            </div>
+          )}
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700">
+        <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
           {isSubmitting ? "Uploading & Submitting..." : "Submit Application"}
         </Button>
       </form>
