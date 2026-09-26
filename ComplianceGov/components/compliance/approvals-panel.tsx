@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { FileText, CheckCircle, Clock } from "lucide-react"
 
 // HARDCODED SUPABASE CREDENTIALS
@@ -66,8 +65,9 @@ export function ApprovalsPanel() {
 
       {loading ? (
         <div className="space-y-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
+          {/* Replaced the missing Skeleton component with native Tailwind CSS */}
+          <div className="h-32 w-full animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+          <div className="h-32 w-full animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
         </div>
       ) : applications.length === 0 ? (
         <Card>
