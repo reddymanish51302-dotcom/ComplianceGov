@@ -69,7 +69,8 @@ export function NewApplicationForm() {
           company_name: companyName,
           industry_type: industry,
           investment_size: investment,
-          document_url: documentUrl, // Save the real file link!
+          document_url: documentUrl, 
+          document_name: file ? file.name : "Unknown Document", // <-- ADDED THIS LINE TO SAVE FILE NAME
           status: "Pending"
         }),
       })
