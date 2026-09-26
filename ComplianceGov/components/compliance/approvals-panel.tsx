@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle, XCircle, Building, FileText, AlertTriangle } from "lucide-react"
+import { Clock, CheckCircle, XCircle, Building, FileText, AlertTriangle, Lightbulb } from "lucide-react"
 
 const SUPABASE_URL = "https://leolsqraajajphguipzx.supabase.co"
 const SUPABASE_ANON_KEY = "sb_publishable_DN_9JJ38bQZxkrfrTKqNcQ_rEEPjE4J"
@@ -78,14 +78,27 @@ export function ApprovalsPanel() {
                 </CardHeader>
                 <CardContent className="pt-4 flex flex-col gap-4">
                   
-                  {/* REJECTION REASON DISPLAY */}
-                  {status === "rejected" && app.feedback && (
-                    <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-start gap-3">
-                      <AlertTriangle className="size-5 text-red-600 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-red-900">Application Rejected</h4>
-                        <p className="text-sm text-red-700 mt-1">Reason: <span className="font-medium">{app.feedback}</span></p>
-                      </div>
+                  {/* REASON & SOLUTION DISPLAY */}
+                  {status === "rejected" && (app.feedback || app.solution) && (
+                    <div className="flex flex-col gap-2">
+                      {app.feedback && (
+                        <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-start gap-3">
+                          <AlertTriangle className="size-5 text-red-600 mt-0.5" />
+                          <div>
+                            <h4 className="text-sm font-semibold text-red-900">Application Rejected</h4>
+                            <p className="text-sm text-red-700 mt-1">Reason: <span className="font-medium">{app.feedback}</span></p>
+                          </div>
+                        </div>
+                      )}
+                      {app.solution && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
+                          <Lightbulb className="size-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <h4 className="text-sm font-semibold text-blue-900">How to Resolve</h4>
+                            <p className="text-sm text-blue-800 mt-1">{app.solution}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -100,7 +113,9 @@ export function ApprovalsPanel() {
                           rel="noreferrer"
                           className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-blue-50 p-2 rounded border border-blue-100 w-max"
                         >
-                          <FileText className="size-4" /> View Main Document
+                          <FileText className="size-4 shrink-0" /> 
+                          {/* Shows the exact file name */}
+                          <span className="truncate max-w-[200px]">{app.document_name || "Main Document"}</span>
                         </a>
                       ) : (
                         <p className="text-sm text-slate-500 italic">No files attached.</p>
